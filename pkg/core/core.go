@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	scraper "github.com/unstppbl/gowap/pkg/scraper"
 	log "github.com/sirupsen/logrus"
+	scraper "github.com/unstppbl/gowap/pkg/scraper"
 
 	jsoniter "github.com/json-iterator/go"
 	"go.zoe.im/surferua"
@@ -39,6 +39,7 @@ type Config struct {
 	MaxVisitedLinks        int
 	MsDelayBetweenRequests int
 	UserAgent              string
+	RemoteUrl              string
 }
 
 // NewConfig struct with default values
@@ -54,6 +55,7 @@ func NewConfig() *Config {
 		MaxVisitedLinks:        10,
 		MsDelayBetweenRequests: 100,
 		UserAgent:              surferua.New().Desktop().Chrome().String(),
+		RemoteUrl:              "127.0.0.1:9222",
 	}
 }
 
@@ -110,25 +112,25 @@ type Wappalyzer struct {
 func Init(config *Config) (wapp *Wappalyzer, err error) {
 	wapp = &Wappalyzer{Config: config}
 	// Scraper initialization
-	switch config.Scraper {
-	case "colly":
-		wapp.Scraper = &scraper.CollyScraper{
-			TimeoutSeconds:        config.TimeoutSeconds,
-			LoadingTimeoutSeconds: config.LoadingTimeoutSeconds,
-			UserAgent:             config.UserAgent,
-		}
-		err = wapp.Scraper.Init()
-	case "rod":
-		wapp.Scraper = &scraper.RodScraper{
-			TimeoutSeconds:        config.TimeoutSeconds,
-			LoadingTimeoutSeconds: config.LoadingTimeoutSeconds,
-			UserAgent:             config.UserAgent,
-		}
-		err = wapp.Scraper.Init()
-	default:
-		log.Errorf("Unknown scraper %s", config.Scraper)
-		err = errors.New("UnknownScraper")
+	// switch config.Scraper {
+	// case "colly":
+	// 	wapp.Scraper = &scraper.CollyScraper{
+	// 		TimeoutSeconds:        config.TimeoutSeconds,
+	// 		LoadingTimeoutSeconds: config.LoadingTimeoutSeconds,
+	// 		UserAgent:             config.UserAgent,
+	// 	}
+	// 	err = wapp.Scraper.Init()
+	// case "rod":
+	wapp.Scraper = &scraper.RodScraper{
+		TimeoutSeconds:        config.TimeoutSeconds,
+		LoadingTimeoutSeconds: config.LoadingTimeoutSeconds,
+		UserAgent:             config.UserAgent,
 	}
+	err = wapp.Scraper.Init(config.RemoteUrl)
+	// default:
+	// 	log.Errorf("Unknown scraper %s", config.Scraper)
+	// 	err = errors.New("UnknownScraper")
+	// }
 
 	if err != nil {
 		log.Errorf("Scraper %s initialization failed : %v", config.Scraper, err)

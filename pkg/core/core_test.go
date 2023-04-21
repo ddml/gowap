@@ -364,3 +364,25 @@ func MockHTTP(content string) *httptest.Server {
 			}))
 	return ts
 }
+
+func TestAny(t *testing.T) {
+	result, err := Analyze("https://www.wy.cn/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(result)
+
+}
+
+func Analyze(url string) (interface{}, error) {
+	cfg := NewConfig()
+	cfg.JSON = true
+	cfg.Scraper = "rod"
+	cfg.AppsJSONPath = "assets/technologies.json"
+	cfg.RemoteUrl = "http://14.17.80.192:9222"
+	c, err := Init(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return c.Analyze(url)
+}

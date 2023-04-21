@@ -2,7 +2,9 @@ package scraper
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -11,7 +13,6 @@ import (
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/proto"
-	"github.com/go-rod/rod/lib/launcher"
 	"github.com/temoto/robotstxt"
 
 	log "github.com/sirupsen/logrus"
@@ -37,11 +38,12 @@ func (s *RodScraper) SetDepth(depth int) {
 	s.depth = depth
 }
 
-func (s *RodScraper) Init() error {
+func (s *RodScraper) Init(url string) error {
 	log.Infoln("Rod initialization")
 	return rod.Try(func() {
-		path, _ := launcher.LookPath()
-		u := launcher.New().Bin(path).NoSandbox(true).MustLaunch()
+		// path, _ := launcher.LookPath()
+		// u := launcher.New().Bin(path).NoSandbox(true).MustLaunch()
+		u := detectURL(url)
 		s.lock = &sync.RWMutex{}
 		s.robotsMap = make(map[string]*robotstxt.RobotsData)
 		s.protoUserAgent = &proto.NetworkSetUserAgentOverride{UserAgent: s.UserAgent}
@@ -192,4 +194,53 @@ func (s *RodScraper) checkRobots(u *url.URL) error {
 		return errors.New("ErrRobotsTxtBlocked")
 	}
 	return nil
+}
+
+func detectURL(urlstr string) string {
+	if strings.Contains(urlstr, "/devtools/browser/") {
+		return urlstr
+	}
+
+	// replace the scheme and path to construct the URL like:
+	// http://127.0.0.1:9222/json/version
+	u, err := url.Parse(urlstr)
+	if err != nil {
+		return urlstr
+	}
+	u.Scheme = "http"
+	u.Path = "/json/version"
+
+	// to get "webSocketDebuggerUrl" in the response
+	resp, err := http.Get(forceIP(u.String()))
+	if err != nil {
+		return urlstr
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return urlstr
+	}
+	// the browser will construct the debugger URL using the "host" header of the /json/version request.
+	// for example, run headless-shell in a container: docker run -d -p 9000:9222 chromedp/headless-shell:latest
+	// then: curl http://127.0.0.1:9000/json/version
+	// and the debugger URL will be something like: ws://127.0.0.1:9000/devtools/browser/...
+	wsURL := result["webSocketDebuggerUrl"].(string)
+	return wsURL
+}
+func forceIP(urlstr string) string {
+	u, err := url.Parse(urlstr)
+	if err != nil {
+		return urlstr
+	}
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return urlstr
+	}
+	addr, err := net.ResolveIPAddr("ip", host)
+	if err != nil {
+		return urlstr
+	}
+	u.Host = net.JoinHostPort(addr.IP.String(), port)
+	return u.String()
 }

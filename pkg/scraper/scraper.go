@@ -24,7 +24,7 @@ type ScrapedData struct {
 
 // Scraper is an interface for different scrapping brower (colly, rod)
 type Scraper interface {
-	Init() error
+	Init(url string) error
 	CanRenderPage() bool
 	Scrape(paramURL string) (*ScrapedData, error)
 	EvalJS(jsProp string) (*string, error)

@@ -49,12 +49,12 @@ func TestRodScraper(t *testing.T) {
 
 	assert.True(t, scraperTest.CanRenderPage(), "Rod can render JS")
 
-	err := scraperTest.Init()
+	err := scraperTest.Init("127.0.0.1:9222")
 	assert.NoError(t, err, "Scraper Init error")
 
 	ts := MockHTTP("<html><script>var now = Date.now();var end = now + 2000;while (now < end) { now = Date.now(); }</script></html>")
 	defer ts.Close()
-	err = scraperTest.Init()
+	err = scraperTest.Init("127.0.0.1:9222")
 	scraperTest.LoadingTimeoutSeconds = 0
 	assert.NoError(t, err, "GoWap Init error")
 	_, err = scraperTest.Scrape(ts.URL)
@@ -62,13 +62,13 @@ func TestRodScraper(t *testing.T) {
 	scraperTest.LoadingTimeoutSeconds = 2
 
 	url := "https://doesnotexist"
-	err = scraperTest.Init()
+	err = scraperTest.Init("127.0.0.1:9222")
 	assert.NoError(t, err, "GoWap Init error")
 	_, err = scraperTest.Scrape(url)
 	assert.Error(t, err, "Bad URL should throw error")
 
 	url = ":foo"
-	err = scraperTest.Init()
+	err = scraperTest.Init("127.0.0.1:9222")
 	assert.NoError(t, err, "GoWap Init error")
 	_, err = scraperTest.Scrape(url)
 	assert.Error(t, err, "Bad URL should throw error")
@@ -106,7 +106,7 @@ func TestRodScraper(t *testing.T) {
 	assert.Error(t, err, "Rod should throw error on rendering bad JS")
 
 	url = "https://twitter.github.io/"
-	err = scraperTest.Init()
+	err = scraperTest.Init("127.0.0.1:9222")
 	assert.NoError(t, err, "GoWap Init error")
 	res, err = scraperTest.Scrape(url)
 	if assert.NoError(t, err, "GoWap Analyze error") {
@@ -155,7 +155,7 @@ func TestRobot(t *testing.T) {
 	}
 
 	rodScraperTest := &RodScraper{TimeoutSeconds: 2, LoadingTimeoutSeconds: 2, UserAgent: "GoWap"}
-	err = rodScraperTest.Init()
+	err = rodScraperTest.Init("127.0.0.1:9222")
 	rodScraperTest.SetDepth(1)
 	if assert.NoError(t, err, "Scraper Init error") {
 		_, err := rodScraperTest.Scrape(ts.URL + "/allowed")
