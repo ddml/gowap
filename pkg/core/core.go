@@ -4,7 +4,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -40,6 +39,7 @@ type Config struct {
 	MsDelayBetweenRequests int
 	UserAgent              string
 	RemoteUrl              string
+	AppsJSON               []byte
 }
 
 // NewConfig struct with default values
@@ -137,26 +137,26 @@ func Init(config *Config) (wapp *Wappalyzer, err error) {
 		return nil, err
 	}
 
-	var appsFile []byte
-	if config.AppsJSONPath != "" {
-		log.Infof("Trying to open technologies file at %s", config.AppsJSONPath)
-		appsFile, err = ioutil.ReadFile(config.AppsJSONPath)
-		if err != nil {
-			log.Warningf("Couldn't open file at %s\n", config.AppsJSONPath)
-		} else {
-			log.Infof("Technologies file opened")
-		}
-	}
-	if config.AppsJSONPath == "" || len(appsFile) == 0 {
-		log.Infof("Loading included asset %s", embedPath)
-		appsFile, err = f.ReadFile(embedPath)
-		if err != nil {
-			log.Errorf("Couldn't open included asset %s\n", embedPath)
-			return nil, err
-		}
-	}
+	// var appsFile []byte
+	// if config.AppsJSONPath != "" {
+	// 	log.Infof("Trying to open technologies file at %s", config.AppsJSONPath)
+	// 	appsFile, err = ioutil.ReadFile(config.AppsJSONPath)
+	// 	if err != nil {
+	// 		log.Warningf("Couldn't open file at %s\n", config.AppsJSONPath)
+	// 	} else {
+	// 		log.Infof("Technologies file opened")
+	// 	}
+	// }
+	// if config.AppsJSONPath == "" || len(appsFile) == 0 {
+	// 	log.Infof("Loading included asset %s", embedPath)
+	// 	appsFile, err = f.ReadFile(embedPath)
+	// 	if err != nil {
+	// 		log.Errorf("Couldn't open included asset %s\n", embedPath)
+	// 		return nil, err
+	// 	}
+	// }
 
-	err = parseTechnologiesFile(&appsFile, wapp)
+	err = parseTechnologiesFile(&config.AppsJSON, wapp)
 	return wapp, err
 }
 
